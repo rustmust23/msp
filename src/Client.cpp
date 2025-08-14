@@ -10,7 +10,7 @@ namespace client {
 Client::Client() :
     port(io),
     log_level_(SILENT),
-    msp_ver_(1),
+    msp_ver_(2),
     fw_variant(FirmwareVariant::INAV) {}
 
 Client::~Client() {}

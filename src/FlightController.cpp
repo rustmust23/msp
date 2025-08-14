@@ -4,7 +4,7 @@
 namespace fcu {
 
 FlightController::FlightController() :
-    msp_version_(1),
+    msp_version_(2),
     control_source_(ControlSource::NONE),
     msp_timer_(std::bind(&FlightController::generateMSP, this), 0.1) {}
 
@@ -30,8 +30,6 @@ bool FlightController::connect(const std::string &device, const size_t baudrate,
         msp::msg::ApiVersion api_version(fw_variant_);
         if(client_.sendMessage(api_version, timeout)) {
             if(print_info) std::cout << api_version;
-            msp_version_ = api_version.major();
-            client_.setVersion(msp_version_);
         }
     }
 
