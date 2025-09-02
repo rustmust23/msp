@@ -56,11 +56,6 @@ bool FlightController::connect(const std::string &device, const size_t baudrate,
     if(print_info) std::cout << status;
     sensors_ = status.sensors;
 
-    msp::msg::Ident ident(fw_variant_);
-    client_.sendMessage(ident, timeout);
-    if(print_info) std::cout << ident;
-    capabilities_ = ident.capabilities;
-
     // get boxes
     initBoxes();
 

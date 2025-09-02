@@ -201,6 +201,7 @@ enum class ID : uint16_t {
     MSP_DEBUGMSG                       = 253,  // out message
     MSP_DEBUG                          = 254,  // out message
     MSP_V2_FRAME                       = 255,  // MSPv2 over MSPv1
+    MSP_QUATERNION                     = 301,
 
     MSP2_COMMON_TZ               = 0x1001,  // out message, TZ offset
     MSP2_COMMON_SET_TZ           = 0x1002,  // in message, sets the TZ offset
@@ -3075,6 +3076,43 @@ struct Attitude : public Message {
     }
 };
 
+// MSP_QUATERNION: 301
+struct Quaternion : public Message {
+    Quaternion(FirmwareVariant v) : Message(v) {}
+
+    virtual ID id() const override { return ID::MSP_QUATERNION; }
+
+    Value<float> w;
+    Value<float> x;
+    Value<float> y;
+    Value<float> z;
+
+    virtual bool decode(const ByteVector& data) override {
+        bool rc = true;
+        auto decode_component = [&](){
+            Value<int16_t> v;
+            rc &= data.unpack(v);
+            return float(v()) / 32767.0f;
+        };
+
+        w = decode_component();
+        x = decode_component();
+        y = decode_component();
+        z = decode_component();
+
+        return rc;
+    }
+
+    virtual std::ostream& print(std::ostream& s) const override {
+        s << "#Quaternion:" << std::endl;
+        s << " w : " << w << ";";
+        s << " x : " << x << ";";
+        s << " y : " << y << ";";
+        s << " z : " << z << ";" << std::endl;
+        return s;
+    }
+};
+
 // TODO validate units
 // MSP_ALTITUDE: 109
 struct Altitude : public Message {
@@ -3540,7 +3578,6 @@ struct BoxIds : public Message {
         box_ids.clear();
 
         for(uint8_t bi : data) box_ids.push_back(bi);
-        ;
 
         return true;
     }
