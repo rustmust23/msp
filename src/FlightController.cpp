@@ -243,7 +243,7 @@ bool FlightController::setRc(const uint16_t roll, const uint16_t pitch,
                              const std::vector<uint16_t> auxs) {
     msp::msg::SetRawRc rc(fw_variant_);
     // insert mappable channels
-    rc.channels.resize(msp::msg::MAX_MAPPABLE_RX_INPUTS);
+    rc.channels.resize(4);
     rc.channels[channel_map_[0]] = roll;
     rc.channels[channel_map_[1]] = pitch;
     rc.channels[channel_map_[2]] = yaw;
@@ -265,6 +265,17 @@ bool FlightController::setRc(const std::vector<uint16_t> channels) {
     msp::msg::SetRawRc rc(fw_variant_);
     rc.channels = channels;
     return client_.sendMessageNoWait(rc);
+}
+
+bool FlightController::setRxMap(
+    std::array<uint8_t, msp::msg::MAX_MAPPABLE_RX_INPUTS> map) {
+    msp::msg::SetRxMap rxMap(fw_variant_);
+    rxMap.map      = map;
+    const auto res = client_.sendMessageNoWait(rxMap);
+    if(res) {
+        channel_map_ = map;
+    }
+    return res;
 }
 
 bool FlightController::setMotors(

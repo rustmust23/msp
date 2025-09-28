@@ -311,7 +311,7 @@ const static size_t MAX_SIMULTANEOUS_ADJUSTMENT_COUNT = 6;
 
 const static size_t OSD_ITEM_COUNT = 41;  // manual count from iNav io/osd.h
 
-const static size_t MAX_MAPPABLE_RX_INPUTS = 4;  // unique to REVO?
+const static size_t MAX_MAPPABLE_RX_INPUTS = 8;  // unique to REVO?
 
 const static size_t LED_MODE_COUNT          = 6;
 const static size_t LED_DIRECTION_COUNT     = 6;
@@ -3088,8 +3088,8 @@ struct Quaternion : public Message {
     Value<float> z;
 
     virtual bool decode(const ByteVector& data) override {
-        bool rc = true;
-        auto decode_component = [&](){
+        bool rc               = true;
+        auto decode_component = [&]() {
             Value<int16_t> v;
             rc &= data.unpack(v);
             return float(v()) / 32767.0f;
@@ -3358,7 +3358,7 @@ struct ActiveBoxes : public Message {
                     if(box_conf() & (1 << (iaux * 3 + ip)))
                         aux_sp[iaux].insert(SwitchPosition(ip));
                 }  // each position (L,M,H)
-            }  // each aux switch
+            }      // each aux switch
             box_pattern.push_back(aux_sp);
         }  // each box
         return rc;

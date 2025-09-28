@@ -151,6 +151,8 @@ public:
      */
     bool setRc(const std::vector<uint16_t> channels);
 
+    bool setRxMap(std::array<uint8_t, msp::msg::MAX_MAPPABLE_RX_INPUTS> map);
+
     /**
      * @brief Register callback function that is called when type is received
      * @param callback Pointer to callback function (class method)
