@@ -4,9 +4,7 @@
 namespace fcu {
 
 FlightController::FlightController() :
-    msp_version_(2),
-    control_source_(ControlSource::NONE),
-    msp_timer_(std::bind(&FlightController::generateMSP, this), 0.1) {}
+    msp_version_(2), control_source_(ControlSource::NONE) {}
 
 FlightController::~FlightController() { disconnect(); }
 
@@ -85,12 +83,9 @@ void FlightController::setLoggingLevel(const msp::client::LoggingLevel &level) {
     client_.setLoggingLevel(level);
 }
 
-void FlightController::setFlightMode(FlightMode mode) {
-    {
-        std::lock_guard<std::mutex> lock(msp_updates_mutex);
-        flight_mode_ = mode;
-    }
-    generateMSP();
+void FlightController::setFlightMode(FlightMode) {
+    // unimplemented
+    assert(false);
 }
 
 FlightMode FlightController::getFlightMode() const { return flight_mode_; }
@@ -130,49 +125,9 @@ ControlSource FlightController::getControlSource() {
     return ControlSource::OTHER;
 }
 
-void FlightController::setRPYT(std::array<double, 4> &&rpyt) {
-    {
-        std::lock_guard<std::mutex> lock(msp_updates_mutex);
-        rpyt_.swap(rpyt);
-    }
-    generateMSP();
-}
-
-void FlightController::generateMSP() {
-    std::vector<uint16_t> cmds(6, 1000);
-    // manually remapping from RPYT to TAER (american RC)
-    // TODO: make this respect channel mapping
-    {
-        std::lock_guard<std::mutex> lock(msp_updates_mutex);
-        cmds[0] = uint16_t(rpyt_[3] * 500) + 1500;
-        cmds[1] = uint16_t(rpyt_[0] * 500) + 1500;
-        cmds[2] = uint16_t(rpyt_[1] * 500) + 1500;
-        cmds[3] = uint16_t(rpyt_[2] * 500) + 1500;
-
-        if(!(uint32_t(flight_mode_.modifier) &
-             uint32_t(FlightMode::MODIFIER::ARM)))
-            cmds[4] = 1000;
-        else if(uint32_t(flight_mode_.secondary) &
-                uint32_t(FlightMode::SECONDARY_MODE::NAV_ALTHOLD))
-            cmds[4] = 2000;
-        else
-            cmds[4] = 1500;
-
-        switch(flight_mode_.primary) {
-        case FlightMode::PRIMARY_MODE::ANGLE:
-            cmds[5] = 1000;
-            break;
-        case FlightMode::PRIMARY_MODE::NAV_POSHOLD:
-            cmds[5] = 1500;
-            break;
-        case FlightMode::PRIMARY_MODE::NAV_RTH:
-            cmds[5] = 2000;
-            break;
-        default:
-            break;
-        }
-    }
-    setRc(cmds);
+void FlightController::setRPYT(std::array<double, 4> &&) {
+    // unimplemented
+    assert(false);
 }
 
 bool FlightController::saveSettings() {
@@ -239,29 +194,24 @@ bool FlightController::isStatusActive(const std::string &status_name,
 bool FlightController::setRc(const uint16_t roll, const uint16_t pitch,
                              const uint16_t yaw, const uint16_t throttle,
                              const uint16_t aux1, const uint16_t aux2,
-                             const uint16_t aux3, const uint16_t aux4,
-                             const std::vector<uint16_t> auxs) {
+                             const uint16_t aux3, const uint16_t aux4) {
     msp::msg::SetRawRc rc(fw_variant_);
     // insert mappable channels
-    rc.channels.resize(4);
     rc.channels[channel_map_[0]] = roll;
     rc.channels[channel_map_[1]] = pitch;
     rc.channels[channel_map_[2]] = yaw;
     rc.channels[channel_map_[3]] = throttle;
 
-    rc.channels.emplace_back(aux1);
-    rc.channels.emplace_back(aux2);
-    rc.channels.emplace_back(aux3);
-    rc.channels.emplace_back(aux4);
+    rc.channels[4] = aux1;
+    rc.channels[5] = aux2;
+    rc.channels[6] = aux3;
+    rc.channels[7] = aux4;
 
-    // insert remaining aux channels
-    rc.channels.insert(std::end(rc.channels), std::begin(auxs), std::end(auxs));
-
-    // send MSP_SET_RAW_RC without waiting for ACK
     return client_.sendMessageNoWait(rc);
 }
 
-bool FlightController::setRc(const std::vector<uint16_t> channels) {
+bool FlightController::setRc(
+    std::array<uint16_t, msp::msg::MAX_SUPPORTED_RC_CHANNEL_COUNT> channels) {
     msp::msg::SetRawRc rc(fw_variant_);
     rc.channels = channels;
     return client_.sendMessageNoWait(rc);

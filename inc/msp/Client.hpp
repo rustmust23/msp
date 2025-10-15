@@ -209,7 +209,7 @@ public:
      * outbound)
      * @return true on success
      */
-    bool sendData(const msp::ID id, const ByteVector& data = ByteVector(0));
+    bool sendData(const msp::ID id, const ByteVector& data);
 
     /**
      * @brief Send an ID and payload to the flight controller
@@ -218,8 +218,8 @@ public:
      * send
      * @return true on success
      */
-    bool sendData(const msp::ID id, const ByteVectorUptr&& data) {
-        if(!data) return sendData(id);
+    bool sendData(const msp::ID id, ByteVectorUptr&& data) {
+        if(!data) return sendData(id, ByteVector(0));
         return sendData(id, *data);
     }
 
@@ -298,8 +298,7 @@ protected:
      * @param data Optional binary payload to be packed into the outbound buffer
      * @return ByteVector of full MSPv1 message ready for sending
      */
-    ByteVector packMessageV1(const msp::ID id,
-                             const ByteVector& data = ByteVector(0)) const;
+    ByteVector packMessageV1(const msp::ID id, const ByteVector& data) const;
 
     /**
      * @brief crcV1 Computes a checksum for MSPv1 messages
@@ -316,8 +315,7 @@ protected:
      * @param data Optional binary payload to be packed into the outbound buffer
      * @return ByteVector of full MSPv2 message ready for sending
      */
-    ByteVector packMessageV2(const msp::ID id,
-                             const ByteVector& data = ByteVector(0)) const;
+    ByteVector packMessageV2(const msp::ID id, const ByteVector& data) const;
 
     /**
      * @brief crcV2 Computes a checksum for MSPv2 messages
@@ -334,6 +332,9 @@ protected:
      * @return uint8_t checksum
      */
     uint8_t crcV2(uint8_t crc, const uint8_t& b) const;
+
+    template <typename InputIt>
+    uint8_t crcV2(uint8_t crc, InputIt first, InputIt last) const;
 
 protected:
     asio::io_service io;     ///<! io service

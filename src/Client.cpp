@@ -245,20 +245,23 @@ uint8_t Client::crcV1(const uint8_t id, const ByteVector& data) const {
 
 ByteVector Client::packMessageV2(const msp::ID id,
                                  const ByteVector& data) const {
+    const uint16_t data_size = uint16_t(data.size());
+
     ByteVector msg;
-    msg.push_back('$');                           // preamble1
-    msg.push_back('X');                           // preamble2
-    msg.push_back('<');                           // direction
-    msg.push_back(0);                             // flag
-    msg.push_back(uint8_t(uint16_t(id) & 0xFF));  // message_id low bits
-    msg.push_back(uint8_t(uint16_t(id) >> 8));    // message_id high bits
-
-    const uint16_t size = uint16_t(data.size());
-    msg.push_back(uint8_t(size & 0xFF));  // data size low bits
-    msg.push_back(uint8_t(size >> 8));    // data size high bits
-
-    msg.insert(msg.end(), data.begin(), data.end());                  // data
-    msg.push_back(crcV2(0, ByteVector(msg.begin() + 3, msg.end())));  // crc
+    msg.reserve(8 + data_size + 1);  // header + data + crc
+    msg.insert(msg.end(),
+               {
+                   '$',                           // preamble1
+                   'X',                           // preamble2
+                   '<',                           // direction
+                   0,                             // flag
+                   uint8_t(uint16_t(id) & 0xFF),  // message_id low bits
+                   uint8_t(uint16_t(id) >> 8),    // message_id high bits
+                   uint8_t(data_size & 0xFF),     // data size low
+                   uint8_t(data_size >> 8)        // data size high
+               });
+    msg.insert(msg.end(), data.begin(), data.end());
+    msg.push_back(crcV2(0, msg.begin() + 3, msg.end()));
 
     return msg;
 }
@@ -266,6 +269,14 @@ ByteVector Client::packMessageV2(const msp::ID id,
 uint8_t Client::crcV2(uint8_t crc, const ByteVector& data) const {
     for(const uint8_t& p : data) {
         crc = crcV2(crc, p);
+    }
+    return crc;
+}
+
+template <typename InputIt>
+uint8_t Client::crcV2(uint8_t crc, InputIt begin, InputIt end) const {
+    for(auto it = begin; it != end; ++it) {
+        crc = crcV2(crc, *it);
     }
     return crc;
 }

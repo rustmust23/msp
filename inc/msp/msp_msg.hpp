@@ -311,7 +311,8 @@ const static size_t MAX_SIMULTANEOUS_ADJUSTMENT_COUNT = 6;
 
 const static size_t OSD_ITEM_COUNT = 41;  // manual count from iNav io/osd.h
 
-const static size_t MAX_MAPPABLE_RX_INPUTS = 8;  // unique to REVO?
+const static size_t MAX_MAPPABLE_RX_INPUTS         = 8;  // unique to REVO?
+const static size_t MAX_SUPPORTED_RC_CHANNEL_COUNT = 18;
 
 const static size_t LED_MODE_COUNT          = 6;
 const static size_t LED_DIRECTION_COUNT     = 6;
@@ -2952,15 +2953,16 @@ struct Rc : public Message {
 
     virtual ID id() const override { return ID::MSP_RC; }
 
-    std::vector<uint16_t> channels;  // [1000, 2000]
+    std::array<uint16_t, MAX_SUPPORTED_RC_CHANNEL_COUNT>
+        channels{};  // [1000, 2000]
 
     virtual bool decode(const ByteVector& data) override {
-        channels.clear();
-        bool rc = true;
+        bool rc  = true;
+        size_t i = 0;
         while(rc) {
             uint16_t rc_data;
             rc &= data.unpack(rc_data);
-            if(rc) channels.push_back(rc_data);
+            if(rc && i < channels.size()) channels[i++] = rc_data;
         }
         return !channels.empty();
     }
@@ -4306,7 +4308,8 @@ struct SetRawRc : public Message {
 
     virtual ID id() const override { return ID::MSP_SET_RAW_RC; }
 
-    std::vector<uint16_t> channels;  // [1000, 2000]
+    std::array<uint16_t, MAX_SUPPORTED_RC_CHANNEL_COUNT>
+        channels{};  // [1000, 2000]
 
     virtual ByteVectorUptr encode() const override {
         ByteVectorUptr data = std::make_unique<ByteVector>();

@@ -81,12 +81,6 @@ public:
     void setRPYT(std::array<double, 4> &&rpyt);
 
     /**
-     * @brief Method used to generate the Rc message sent to the flight
-     * controller
-     */
-    void generateMSP();
-
-    /**
      * @brief Sends message to flight controller to save all settings
      */
     bool saveSettings();
@@ -135,21 +129,20 @@ public:
      * @param aux2
      * @param aux3
      * @param aux4
-     * @param auxs
      * @return
      */
     bool setRc(const uint16_t roll, const uint16_t pitch, const uint16_t yaw,
                const uint16_t throttle, const uint16_t aux1 = 1000,
                const uint16_t aux2 = 1000, const uint16_t aux3 = 1000,
-               const uint16_t aux4              = 1000,
-               const std::vector<uint16_t> auxs = std::vector<uint16_t>());
+               const uint16_t aux4 = 1000);
 
     /**
      * @brief Set RC channels in raw order as it is interpreted by the FC
      * @param channels list of channel values (1000-2000)
      * @return
      */
-    bool setRc(const std::vector<uint16_t> channels);
+    bool setRc(std::array<uint16_t, msp::msg::MAX_SUPPORTED_RC_CHANNEL_COUNT>
+                   channels);
 
     bool setRxMap(std::array<uint8_t, msp::msg::MAX_MAPPABLE_RX_INPUTS> map);
 
@@ -363,8 +356,6 @@ private:
     std::mutex msp_updates_mutex;
 
     ControlSource control_source_;
-
-    msp::PeriodicTimer msp_timer_;
 };
 
 }  // namespace fcu
